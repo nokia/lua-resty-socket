@@ -56,7 +56,7 @@ do
       local ssl = require 'ssl'
       local params = {
         mode = 'client',
-        protocol = 'tlsv1',
+        protocol = 'tlsv1_2',
         key = opts.key,
         certificate = opts.cert,
         cafile = opts.cafile,
@@ -143,11 +143,18 @@ do
     local get_phase = ngx.get_phase
     local ngx_socket = ngx.socket
 
-    function _M.tcp(...)
+    function _M.tcp(socket_type, ...)
       local phase = get_phase()
-      if not forced_luasocket_phases[phase]
-         and COSOCKET_PHASES[phase]
-         or forbidden_luasocket_phases[phase] then
+
+      if socket_type == nil then
+        if phase ~= "init" then
+          socket_type = "nginx"
+        else
+          socket_type = "luasocket"
+        end
+      end
+
+      if socket_type == "nginx" then
         return ngx_socket.tcp(...)
       end
 
